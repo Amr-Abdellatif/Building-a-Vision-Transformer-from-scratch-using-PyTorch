@@ -1,4 +1,12 @@
-# In Vision Transofrmer we're only using the Encoder Block
+# What are Vision Transformers? 
+
+As introduced in Attention is All You Need, transformers are a type of machine learning model utilizing attention as the primary learning mechanism. Transformers quickly became the state of the art for sequence-to-sequence tasks such as language translation.
+
+An Image is Worth 16x16 Words successfully modified the transformer put forth in to solve image classification tasks, creating the Vision Transformer (ViT). The ViT is based on the same attention mechanism as the transformer in. However, while transformers for NLP tasks consist of an encoder attention branch and a decoder attention branch, the ViT only uses an encoder. The output of the encoder is then passed to a neural network “head” that makes a prediction.
+
+The drawback of ViT as implemented in is that it’s optimal performance requires pretraining on large datasets. The best models pretrained on the proprietary JFT-300M dataset. Models pretrained on the smaller, open source ImageNet-21k perform on par with the state-of-the-art convolutional ResNet models.
+
+## In Vision Transofrmer we're only using the Encoder Block
 --------------------------------------------------------------
 ### So looking at the steps we would have the following
 
