@@ -6,6 +6,9 @@ An Image is Worth 16x16 Words successfully modified the transformer put forth in
 
 The drawback of ViT as implemented in is that it’s optimal performance requires pretraining on large datasets. The best models pretrained on the proprietary JFT-300M dataset. Models pretrained on the smaller, open source ImageNet-21k perform on par with the state-of-the-art convolutional ResNet models.
 
+![Alt text](me.gif)
+
+
 ## In Vision Transofrmer we're only using the Encoder Block
 --------------------------------------------------------------
 ### So looking at the steps we would have the following
