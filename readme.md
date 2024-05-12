@@ -1,5 +1,8 @@
 # What are Vision Transformers? 
 
+https://github.com/Amr-Abdellatif/Building-a-Vision-Transformer-from-scratch-using-PyTorch/assets/92921252/42765181-d193-47e1-9a94-73e670d692cb
+
+
 As introduced in Attention is All You Need, transformers are a type of machine learning model utilizing attention as the primary learning mechanism. Transformers quickly became the state of the art for sequence-to-sequence tasks such as language translation.
 
 An Image is Worth 16x16 Words successfully modified the transformer put forth in to solve image classification tasks, creating the Vision Transformer (ViT). The ViT is based on the same attention mechanism as the transformer in. However, while transformers for NLP tasks consist of an encoder attention branch and a decoder attention branch, the ViT only uses an encoder. The output of the encoder is then passed to a neural network “head” that makes a prediction.
@@ -10,6 +13,8 @@ The drawback of ViT as implemented in is that it’s optimal performance require
 
 
 # Usage
+
+python version `python 3.12` with WSL environment using Mini-conda
 
 
 ## In Vision Transofrmer we're only using the Encoder Block
