@@ -2,26 +2,30 @@
 Contains functions for training and testing a PyTorch model.
 """
 import torch
-
+from torch.cuda import amp
 from tqdm.auto import tqdm
 from typing import Dict, List, Tuple
 
+
+
 def train_step(model: torch.nn.Module, 
-               dataloader: torch.utils.data.DataLoader, 
-               loss_fn: torch.nn.Module, 
-               optimizer: torch.optim.Optimizer,
-               device: torch.device) -> Tuple[float, float]:
-    """Trains a PyTorch model for a single epoch.
+              dataloader: torch.utils.data.DataLoader, 
+              loss_fn: torch.nn.Module, 
+              optimizer: torch.optim.Optimizer,
+              scaler: amp.GradScaler,
+              device: torch.device) -> Tuple[float, float]:
+    """Trains a PyTorch model for a single epoch using mixed precision.
 
     Turns a target PyTorch model to training mode and then
     runs through all of the required training steps (forward
-    pass, loss calculation, optimizer step).
+    pass, loss calculation, optimizer step) using AMP.
 
     Args:
     model: A PyTorch model to be trained.
     dataloader: A DataLoader instance for the model to be trained on.
     loss_fn: A PyTorch loss function to minimize.
     optimizer: A PyTorch optimizer to help minimize the loss function.
+    scaler: A PyTorch AMP GradScaler to scale gradients.
     device: A target device to compute on (e.g. "cuda" or "cpu").
 
     Returns:
@@ -37,29 +41,31 @@ def train_step(model: torch.nn.Module,
     train_loss, train_acc = 0, 0
 
     # Loop through data loader data batches
-    for batch, (X, y) in enumerate(dataloader):
+    for batch, (X, y) in enumerate(tqdm(dataloader)):
         # Send data to target device
         X, y = X.to(device), y.to(device)
 
         # 1. Forward pass
-        y_pred = model(X)
+        with amp.autocast():
+            y_pred = model(X)
+            loss = loss_fn(y_pred, y)
 
-        # 2. Calculate  and accumulate loss
-        loss = loss_fn(y_pred, y)
-        train_loss += loss.item() 
-
-        # 3. Optimizer zero grad
+        # 2. Optimizer zero grad
         optimizer.zero_grad()
 
-        # 4. Loss backward
-        loss.backward()
+        # 3. Loss backward
+        scaler.scale(loss).backward()
 
-        # 5. Optimizer step
-        optimizer.step()
+        # 4. Optimizer step
+        scaler.step(optimizer)
+        scaler.update()
 
         # Calculate and accumulate accuracy metric across all batches
         y_pred_class = torch.argmax(torch.softmax(y_pred, dim=1), dim=1)
         train_acc += (y_pred_class == y).sum().item()/len(y_pred)
+
+        # Accumulate loss
+        train_loss += loss.item()
 
     # Adjust metrics to get average loss and accuracy per batch 
     train_loss = train_loss / len(dataloader)
@@ -149,28 +155,32 @@ def train(model: torch.nn.Module,
               test_loss: [...],
               test_acc: [...]} 
     For example if training for epochs=2: 
-             {train_loss: [2.0616, 1.0537],
+            {train_loss: [2.0616, 1.0537],
               train_acc: [0.3945, 0.3945],
               test_loss: [1.2641, 1.5706],
               test_acc: [0.3400, 0.2973]} 
     """
     # Create empty results dictionary
     results = {"train_loss": [],
-               "train_acc": [],
-               "test_loss": [],
-               "test_acc": []
+              "train_acc": [],
+              "test_loss": [],
+              "test_acc": []
     }
     
     # Make sure model on target device
     model.to(device)
 
+    scaler = amp.GradScaler()
+
     # Loop through training and testing steps for a number of epochs
-    for epoch in tqdm(range(epochs)):
+    for epoch in range(epochs):
         train_loss, train_acc = train_step(model=model,
                                           dataloader=train_dataloader,
                                           loss_fn=loss_fn,
                                           optimizer=optimizer,
-                                          device=device)
+                                          device=device,
+                                          scaler=scaler)
+        
         test_loss, test_acc = test_step(model=model,
           dataloader=test_dataloader,
           loss_fn=loss_fn,
