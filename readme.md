@@ -40,7 +40,7 @@ The drawback of ViT as implemented in is that it’s optimal performance require
 
 # What are Embeddings ?
 
-if we have wheat -> we can't use it direclty unless we transform it to flour to make bread - dodo bread .. brngaliese
+if we have wheat -> we can't use it direclty unless we transform it to flour to make bread
 
 and this is the essence of embedding, something like patches of images, we can't deal with it directly
 we need embeddings which is a different representation of the patches, the only thing is that it's ``` Learnable ```  
