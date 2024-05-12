@@ -14,8 +14,8 @@ The drawback of ViT as implemented in is that it’s optimal performance require
 
 # Usage
 
-python version `python 3.12` with WSL environment using Mini-conda
-
+1. python version `python 3.12` with WSL environment using Mini-conda
+2. pip install `requirements.txt`
 
 ## In Vision Transofrmer we're only using the Encoder Block
 --------------------------------------------------------------
