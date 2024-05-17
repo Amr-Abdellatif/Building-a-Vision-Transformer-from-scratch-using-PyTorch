@@ -39,7 +39,9 @@ def trainer(config):
         optimizer=optimizer,
         loss_fn=criterion,
         epochs=config["epochs"],
-        device=device)
+        device=device,
+        config=config)
+    
     return results
 
 if __name__ == "__main__":

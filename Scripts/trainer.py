@@ -5,7 +5,7 @@ import torch
 from torch.cuda import amp
 from tqdm.auto import tqdm
 from typing import Dict, List, Tuple
-
+from config import *
 
 
 def train_step(model: torch.nn.Module, 
@@ -128,7 +128,8 @@ def train(model: torch.nn.Module,
           optimizer: torch.optim.Optimizer,
           loss_fn: torch.nn.Module,
           epochs: int,
-          device: torch.device) -> Dict[str, List]:
+          device: torch.device,
+          config) -> Dict[str, List]:
     """Trains and tests a PyTorch model.
 
     Passes a target PyTorch models through train_step() and test_step()
@@ -170,10 +171,28 @@ def train(model: torch.nn.Module,
     # Make sure model on target device
     model.to(device)
 
-    scaler = amp.GradScaler()
+    Path(f"Vit_{config['model_folder']}").mkdir(parents=True, exist_ok=True)
 
+    initial_epoch = 0
+    global_step = 0
+    preload = config['preload']
+    model_filename = latest_weights_file_path(config) if preload == 'latest' else get_weights_file_path(config, preload) if preload else None
+    if model_filename:
+        print(f'Preloading model {model_filename}')
+        state = torch.load(model_filename)
+        model.load_state_dict(state['model_state_dict'])
+        initial_epoch = state['epoch'] + 1
+        optimizer.load_state_dict(state['optimizer_state_dict'])
+        global_step = state['global_step']
+    else:
+        print('No model to preload, starting from scratch')
+
+
+
+    scaler = amp.GradScaler()
+    
     # Loop through training and testing steps for a number of epochs
-    for epoch in range(epochs):
+    for epoch in range(initial_epoch,epochs):
         train_loss, train_acc = train_step(model=model,
                                           dataloader=train_dataloader,
                                           loss_fn=loss_fn,
@@ -186,6 +205,8 @@ def train(model: torch.nn.Module,
           loss_fn=loss_fn,
           device=device)
 
+        global_step += 1
+
         # Print out what's happening
         print(
           f"Epoch: {epoch+1} | "
@@ -194,12 +215,22 @@ def train(model: torch.nn.Module,
           f"test_loss: {test_loss:.4f} | "
           f"test_acc: {test_acc:.4f}"
         )
-
+        
         # Update results dictionary
-        results["train_loss"].append(train_loss.detach().numpy())
-        results["train_acc"].append(train_acc.detach().numpy())
-        results["test_loss"].append(test_loss.detach().numpy())
-        results["test_acc"].append(test_acc.detach().numpy())
+        results["train_loss"].append(train_loss)
+        results["train_acc"].append(train_acc)
+        results["test_loss"].append(test_loss)
+        results["test_acc"].append(test_acc)
 
+
+        model_filename = get_weights_file_path(config, f'{epoch:02d}')
+        torch.save(
+            {
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'global_step': global_step
+            },model_filename # save the name of the model saved states
+        )
     # Return the filled results at the end of the epochs
     return results
